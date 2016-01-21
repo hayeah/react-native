@@ -19,6 +19,7 @@
 #import "UIView+React.h"
 
 NSString *const RCTJSNavigationScheme = @"react-js-navigation";
+NSString *const RCTWebViewMessageScheme = @"react-webview-messages";
 
 @interface RCTWebView () <UIWebViewDelegate, RCTAutoInsetsProtocol>
 
@@ -26,6 +27,7 @@ NSString *const RCTJSNavigationScheme = @"react-js-navigation";
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingFinish;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingError;
 @property (nonatomic, copy) RCTDirectEventBlock onShouldStartLoadWithRequest;
+@property (nonatomic, copy) RCTDirectEventBlock onJSONMessages;
 
 @end
 
@@ -143,6 +145,23 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
 - (BOOL)webView:(__unused UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request
  navigationType:(UIWebViewNavigationType)navigationType
 {
+
+  BOOL isWebViewMessage = [request.URL.scheme isEqualToString:RCTWebViewMessageScheme];
+  if(isWebViewMessage) {
+    NSString *jsonString = [self flushWebViewMessages];
+
+    if(_onJSONMessages) {
+      NSMutableDictionary<NSString *, id> *event = [self baseEvent];
+      [event addEntriesFromDictionary:@{
+        @"messages": jsonString,
+      }];
+
+      _onJSONMessages(event);
+    }
+
+    return NO;
+  }
+
   BOOL isJSNavigation = [request.URL.scheme isEqualToString:RCTJSNavigationScheme];
 
   // skip this for the JS Navigation handler
@@ -213,4 +232,18 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
   }
 }
 
+#pragma mark - ReactWebViewEvent
+
+- (void) receiveWebViewMessage: (NSString *) jsonString {
+  NSString *script = [NSString stringWithFormat:@"ReactNativeWebView._receiveMessage('%@')", jsonString];
+  [_webView stringByEvaluatingJavaScriptFromString: script];
+}
+
+- (NSString *) flushWebViewMessages {
+  if(_onJSONMessages) {
+    return [_webView stringByEvaluatingJavaScriptFromString:@"ReactNativeWebView._flushMessages()"];
+  } else {
+    return [_webView stringByEvaluatingJavaScriptFromString:@"ReactNativeWebView._flushMessages({discard: true})"];
+  }
+}
 @end

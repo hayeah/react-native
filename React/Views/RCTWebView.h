@@ -40,4 +40,6 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
 - (void)goBack;
 - (void)reload;
 
+- (void) receiveWebViewMessage: (NSString *) jsonString;
+
 @end

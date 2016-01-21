@@ -44,7 +44,9 @@ RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingStart, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingFinish, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingError, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onJSONMessages, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onShouldStartLoadWithRequest, RCTDirectEventBlock)
+
 RCT_REMAP_VIEW_PROPERTY(allowsInlineMediaPlayback, _webView.allowsInlineMediaPlayback, BOOL)
 
 - (NSDictionary<NSString *, id> *)constantsToExport
@@ -130,6 +132,19 @@ RCT_EXPORT_METHOD(startLoadWithResult:(BOOL)result lockIdentifier:(NSInteger)loc
     RCTLogWarn(@"startLoadWithResult invoked with invalid lockIdentifier: "
                "got %zd, expected %zd", lockIdentifier, _shouldStartLoadLock.condition);
   }
+}
+
+RCT_EXPORT_METHOD(sendJSONMessage:(nonnull NSNumber *)reactTag json: (NSString *) jsonString)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWebView *> *viewRegistry) {
+    RCTWebView *view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[RCTWebView class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting RCTWebView, got: %@", view);
+    }
+
+    [view receiveWebViewMessage:jsonString];
+
+  }];
 }
 
 @end

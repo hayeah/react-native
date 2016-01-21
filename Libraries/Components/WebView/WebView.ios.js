@@ -113,6 +113,17 @@ var WebView = React.createClass({
      * Invoked when load fails
      */
     onError: PropTypes.func,
+
+    /**
+     * Invoked when messages arrive from WebView
+     */
+    onJSONMessages: PropTypes.func,
+
+    /**
+     * Invoked for individual parsed JSON messages.
+     */
+    onReceive: PropTypes.func,
+
     /**
      * @platform ios
      */
@@ -244,6 +255,7 @@ var WebView = React.createClass({
         onLoadingFinish={this.onLoadingFinish}
         onLoadingError={this.onLoadingError}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+        onJSONMessages={this.props.onReceive ? this.onJSONMessages : undefined}
         scalesPageToFit={this.props.scalesPageToFit}
         allowsInlineMediaPlayback={this.props.allowsInlineMediaPlayback}
       />;
@@ -254,6 +266,19 @@ var WebView = React.createClass({
         {otherView}
       </View>
     );
+  },
+
+  send: function(obj) {
+    var jsonMessage = JSON.stringify(obj);
+    RCTWebViewManager.sendJSONMessage(this.getWebViewHandle(),jsonMessage);
+  },
+
+  onJSONMessages: function(e) {
+    var objects = JSON.parse(e.nativeEvent.messages);
+
+    objects.forEach(object => {
+      this.props.onReceive(object);
+    });
   },
 
   goForward: function() {
