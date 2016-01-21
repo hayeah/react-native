@@ -132,9 +132,9 @@ RCT_EXPORT_METHOD(startLoadWithResult:(BOOL)result lockIdentifier:(NSInteger)loc
   }
 }
 
-RCT_EXPORT_METHOD(evaluateJavaScript:(NSNumber *)reactTag script: (NSString *)script callback:(RCTResponseSenderBlock) callback)
+RCT_EXPORT_METHOD(evaluateJavaScript:(nonnull NSNumber *)reactTag script: (NSString *)script callback:(RCTResponseSenderBlock) callback)
 {
-  [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, RCTSparseArray *viewRegistry) {
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWebView *> *viewRegistry) {
     RCTWebView *view = viewRegistry[reactTag];
     if (![view isKindOfClass:[RCTWebView class]]) {
       RCTLogError(@"Invalid view returned from registry, expecting RKWebView, got: %@", view);
