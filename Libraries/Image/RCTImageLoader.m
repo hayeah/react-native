@@ -367,10 +367,28 @@ static UIImage *RCTResizeImageIfNeeded(UIImage *image,
 
     // Check for cached response before reloading
     // TODO: move URL cache out of RCTImageLoader into its own module
-    NSCachedURLResponse *cachedResponse = [_URLCache cachedResponseForRequest:request];
-    if (cachedResponse) {
-      processResponse(cachedResponse.response, cachedResponse.data, nil);
-      return;
+    NSCachedURLResponse *cachedResponse;
+
+    // Check if the cachedResponse is a http redirect
+    while(true) {
+      cachedResponse = [_URLCache cachedResponseForRequest:request];
+
+      if (!cachedResponse) {
+        break;
+      }
+
+      if ([cachedResponse.response isKindOfClass:NSHTTPURLResponse.class]) {
+        NSHTTPURLResponse *response = (NSHTTPURLResponse *) cachedResponse.response;
+        if (response.statusCode == 301 || response.statusCode == 302) {
+          NSMutableURLRequest *newRequest = [request mutableCopy];
+          newRequest.URL = [NSURL URLWithString: response.allHeaderFields[@"Location"]];
+          request = newRequest;
+          continue;
+        } else {
+          processResponse(cachedResponse.response, cachedResponse.data, nil);
+          return;
+        }
+      }
     }
 
     // Download image
